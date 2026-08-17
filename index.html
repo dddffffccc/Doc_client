@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل العيادة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20241f;
+    --paper:#f6f1e7;
+    --paper-card:#fffdf8;
+    --pine:#1b4b43;
+    --pine-light:#2b6358;
+    --sage:#dce5d9;
+    --gold:#c08a2e;
+    --gold-light:#e0b96a;
+    --line:#d8cfb9;
+    --danger:#a4402f;
+    --shadow: 0 1px 2px rgba(32,36,31,0.06), 0 8px 24px rgba(32,36,31,0.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Tajawal', sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(27,75,67,0.05), transparent 40%),
+      radial-gradient(circle at 0% 100%, rgba(192,138,46,0.06), transparent 40%);
+  }
+  ::selection{ background:var(--gold-light); }
+
+  /* ---------- App shell ---------- */
+  .app{ display:flex; min-height:100vh; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:340px; min-width:340px;
+    background:var(--pine);
+    color:#eef4f0;
+    display:flex; flex-direction:column;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+  }
+  .brand{
+    padding:22px 20px 16px;
+    border-bottom:1px solid rgba(255,255,255,0.12);
+  }
+  .brand-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.14em;
+    color:var(--gold-light); text-transform:uppercase;
+    margin-bottom:4px;
+  }
+  .brand h1{
+    font-family:'Aref Ruqaa', serif;
+    font-size:26px; font-weight:700; color:#fff;
+  }
+  .brand p{ font-size:12.5px; color:#c9d9d1; margin-top:2px;}
+
+  .search-wrap{ padding:16px 18px 10px; }
+  .search-box{
+    display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:10px; padding:10px 12px;
+  }
+  .search-box:focus-within{ border-color:var(--gold-light); background:rgba(255,255,255,0.12); }
+  .search-box input{
+    background:transparent; border:none; outline:none;
+    color:#fff; font-family:'Tajawal',sans-serif; font-size:14px; width:100%;
+  }
+  .search-box input::placeholder{ color:#a9bdb5; }
+  .search-hint{ font-size:11px; color:#9fb4ab; padding:6px 4px 0; }
+
+  .filters{ display:flex; gap:6px; padding:10px 18px 4px; flex-wrap:wrap; }
+  .filter-chip{
+    font-size:12px; padding:5px 10px; border-radius:20px;
+    background:rgba(255,255,255,0.07); color:#dce8e3;
+    border:1px solid rgba(255,255,255,0.12); cursor:pointer;
+    font-family:'Tajawal',sans-serif;
+    transition:all .15s ease;
+  }
+  .filter-chip.active{ background:var(--gold); color:#2b220a; border-color:var(--gold); font-weight:700; }
+
+  .patient-list{
+    flex:1; overflow-y:auto; padding:8px 12px 12px;
+  }
+  .patient-card{
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:10px 12px; margin-bottom:8px;
+    cursor:pointer; display:flex; align-items:center; gap:10px;
+    transition:all .15s ease;
+  }
+  .patient-card:hover{ background:rgba(255,255,255,0.1); }
+  .patient-card.selected{ background:var(--gold); border-color:var(--gold); }
+  .patient-card.selected .p-name, .patient-card.selected .p-meta{ color:#2b220a; }
+  .p-avatar{
+    width:42px; height:42px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:var(--sage); display:flex; align-items:center; justify-content:center;
+    font-weight:700; color:var(--pine); font-family:'Aref Ruqaa',serif; font-size:18px;
+  }
+  .p-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .p-info{ flex:1; min-width:0; }
+  .p-name{ font-weight:700; font-size:14.5px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .p-meta{ font-size:11.5px; color:#a9bdb5; margin-top:2px; display:flex; gap:6px; flex-wrap:wrap; }
+  .p-status-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  .empty-list{ text-align:center; color:#9fb4ab; font-size:13px; padding:30px 16px; }
+
+  .add-btn-wrap{ padding:12px 18px 18px; border-top:1px solid rgba(255,255,255,0.12); }
+  .add-btn{
+    width:100%; background:var(--gold); color:#2b220a; border:none;
+    padding:12px; border-radius:10px; font-weight:700; font-size:14.5px;
+    cursor:pointer; font-family:'Tajawal',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:filter .15s ease;
+  }
+  .add-btn:hover{ filter:brightness(1.08); }
+
+  /* ---------- Main panel ---------- */
+  .main{ flex:1; padding:28px 34px; overflow-y:auto; max-height:100vh; }
+  .topline{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; flex-wrap:wrap; gap:10px;}
+  .topline .count-label{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8a8270; letter-spacing:0.05em;}
+
+  .empty-state{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:70vh; text-align:center; color:#8a8270;
+  }
+  .empty-state .stamp{
+    width:88px; height:88px; border:2px dashed var(--line); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:34px;
+    margin-bottom:18px; color:var(--pine); transform:rotate(-6deg);
+  }
+  .empty-state h2{ font-family:'Aref Ruqaa',serif; font-size:24px; color:var(--pine); margin-bottom:6px; }
+  .empty-state p{ font-size:14px; max-width:340px; }
+
+  /* Patient file card */
+  .file-card{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:16px; box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .file-head{
+    background:linear-gradient(135deg, var(--pine) 0%, var(--pine-light) 100%);
+    padding:26px 30px; color:#fff; display:flex; gap:20px; align-items:center; position:relative;
+  }
+  .file-head::after{
+    content:''; position:absolute; inset:0;
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 14px);
+    pointer-events:none;
+  }
+  .file-avatar{
+    width:84px; height:84px; border-radius:14px; overflow:hidden; flex-shrink:0;
+    background:var(--sage); display:flex; align-items:center; justify-content:center;
+    font-family:'Aref Ruqaa',serif; font-size:34px; color:var(--pine); font-weight:700;
+    border:3px solid rgba(255,255,255,0.35); position:relative; z-index:1;
+    cursor:pointer;
+  }
+  .file-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .file-head-info{ flex:1; position:relative; z-index:1; }
+  .file-head-info h2{ font-family:'Aref Ruqaa',serif; font-size:28px; }
+  .file-head-info .nickname{ color:var(--gold-light); font-size:13.5px; margin-top:2px; }
+  .file-id{
+    font-family:'IBM Plex Mono',monospace; font-size:12px;
+    background:rgba(0,0,0,0.2); padding:4px 10px; border-radius:6px;
+    display:inline-block; margin-top:8px; letter-spacing:0.05em;
+  }
+  .file-head-actions{ display:flex; gap:8px; position:relative; z-index:1; }
+  .icon-btn{
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+    color:#fff; width:38px; height:38px; border-radius:9px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    transition:background .15s ease;
+  }
+  .icon-btn:hover{ background:rgba(255,255,255,0.22); }
+  .icon-btn.danger:hover{ background:var(--danger); border-color:var(--danger); }
+
+  .status-strip{
+    display:flex; gap:0; border-bottom:1px solid var(--line); background:#fbf8f1;
+  }
+  .status-item{
+    flex:1; padding:14px 18px; border-left:1px solid var(--line);
+  }
+  .status-item:first-child{ border-left:none; }
+  .status-item label{ font-size:11px; color:#8a8270; letter-spacing:0.03em; display:block; margin-bottom:3px;}
+  .status-item .val{ font-size:14.5px; font-weight:700; color:var(--ink); }
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:12.5px; font-weight:700;
+  }
+
+  .file-body{ padding:26px 30px 34px; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px 26px; margin-bottom:24px; }
+  .field{ }
+  .field label{ font-size:11.5px; color:#8a8270; letter-spacing:0.03em; display:block; margin-bottom:4px; }
+  .field .fval{ font-size:15px; color:var(--ink); line-height:1.5; }
+  .field .fval.empty{ color:#b6ac95; font-style:italic; }
+
+  .section-title{
+    font-family:'Aref Ruqaa', serif; font-size:19px; color:var(--pine);
+    margin:26px 0 12px; padding-bottom:6px; border-bottom:2px solid var(--sage);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title .add-mini{
+    font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700; color:var(--gold);
+    cursor:pointer; border:1px solid var(--gold); padding:4px 10px; border-radius:20px;
+    background:transparent;
+  }
+  .section-title .add-mini:hover{ background:var(--gold); color:#2b220a; }
+
+  .gallery{ display:flex; gap:12px; flex-wrap:wrap; }
+  .gallery-item{
+    position:relative; width:110px; height:110px; border-radius:10px; overflow:hidden;
+    border:1px solid var(--line); box-shadow:var(--shadow); background:#fff;
+  }
+  .gallery-item img{ width:100%; height:100%; object-fit:cover; cursor:pointer; }
+  .gallery-item .rm{
+    position:absolute; top:4px; left:4px; background:rgba(20,20,20,0.6); color:#fff;
+    border:none; width:22px; height:22px; border-radius:50%; cursor:pointer; font-size:13px;
+  }
+  .gallery-empty{ font-size:13px; color:#b6ac95; font-style:italic; }
+
+  .notes-box{
+    background:#fbf8f1; border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+    font-size:14px; line-height:1.7; white-space:pre-wrap;
+  }
+
+  /* ---------- Form ---------- */
+  .form-card{
+    background:var(--paper-card); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:30px; max-width:760px;
+  }
+  .form-title{ font-family:'Aref Ruqaa',serif; font-size:24px; color:var(--pine); margin-bottom:20px; }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px 20px; }
+  .form-grid .full{ grid-column:1 / -1; }
+  .fg label{ font-size:13px; font-weight:700; color:var(--ink); display:block; margin-bottom:6px; }
+  .fg input, .fg select, .fg textarea{
+    width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:9px;
+    font-family:'Tajawal',sans-serif; font-size:14px; background:#fff; color:var(--ink);
+    outline:none; transition:border-color .15s ease;
+  }
+  .fg input:focus, .fg select:focus, .fg textarea:focus{ border-color:var(--pine); }
+  .fg textarea{ resize:vertical; min-height:70px; }
+
+  .photo-upload{
+    display:flex; align-items:center; gap:14px; margin-bottom:20px;
+  }
+  .photo-preview{
+    width:70px; height:70px; border-radius:12px; background:var(--sage); overflow:hidden;
+    display:flex; align-items:center; justify-content:center; color:var(--pine); font-size:26px;
+    border:1.5px dashed var(--line); flex-shrink:0;
+  }
+  .photo-preview img{ width:100%; height:100%; object-fit:cover; }
+  .upload-btn{
+    background:var(--sage); border:1.5px solid var(--pine-light); color:var(--pine);
+    padding:9px 16px; border-radius:9px; cursor:pointer; font-size:13.5px; font-weight:700;
+    font-family:'Tajawal',sans-serif;
+  }
+  .upload-btn:hover{ background:#cddccb; }
+  input[type=file]{ display:none; }
+
+  .form-actions{ display:flex; gap:10px; margin-top:26px; justify-content:flex-start; }
+  .btn-primary{
+    background:var(--pine); color:#fff; border:none; padding:11px 26px; border-radius:9px;
+    font-weight:700; font-size:14.5px; cursor:pointer; font-family:'Tajawal',sans-serif;
+  }
+  .btn-primary:hover{ background:var(--pine-light); }
+  .btn-secondary{
+    background:transparent; color:var(--ink); border:1.5px solid var(--line); padding:11px 22px;
+    border-radius:9px; font-weight:700; font-size:14.5px; cursor:pointer; font-family:'Tajawal',sans-serif;
+  }
+  .btn-secondary:hover{ background:#efe9da; }
+
+  /* lightbox */
+  .lightbox{
+    position:fixed; inset:0; background:rgba(20,18,12,0.85); display:none;
+    align-items:center; justify-content:center; z-index:999; padding:30px;
+  }
+  .lightbox.open{ display:flex; }
+  .lightbox img{ max-width:100%; max-height:100%; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .lightbox-close{
+    position:absolute; top:20px; left:20px; background:rgba(255,255,255,0.15); border:none;
+    color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer;
+  }
+
+  /* toast */
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#f6f1e7; padding:12px 22px; border-radius:10px;
+    font-size:14px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:1000;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* responsive */
+  @media (max-width: 860px){
+    .app{ flex-direction:column; }
+    .sidebar{ width:100%; min-width:0; max-height:46vh; }
+    .main{ padding:18px; }
+    .grid-2, .form-grid{ grid-template-columns:1fr; }
+    .file-head{ flex-wrap:wrap; }
+  }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:#c9bfa4; border-radius:10px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-eyebrow">سجل العيادة</div>
+      <h1 id="clinicName">عيادة الدكتور</h1>
+      <p>لوحة تحكم بيانات المرضى</p>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <span>🔍</span>
+        <input id="searchInput" type="text" placeholder="ابحث بالاسم، الرقم، الشهرة، أو الحالة...">
+      </div>
+      <div class="search-hint">النتائج بتتحدث أول ما تكتب</div>
+    </div>
+
+    <div class="filters" id="statusFilters">
+      <div class="filter-chip active" data-status="all">الكل</div>
+    </div>
+
+    <div class="patient-list" id="patientList"></div>
+
+    <div class="add-btn-wrap">
+      <button class="add-btn" id="btnAddPatient">+ إضافة مريض جديد</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="mainPanel"></main>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Storage ================= */
+const STORAGE_KEY = 'clinic_patients_v1';
+let patients = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let selectedId = null;
+let currentFilter = 'all';
+let editingId = null; // if set, form is editing this patient
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(patients)); }
+
+function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+/* status config */
+const STATUS_LIST = [
+  {key:'مستقر', color:'#4a7a5f', bg:'#e3ede4'},
+  {key:'متابعة', color:'#c08a2e', bg:'#f6ecd6'},
+  {key:'حرج', color:'#a4402f', bg:'#f3ddd7'},
+  {key:'شفاء', color:'#2b6358', bg:'#dce5df'},
+];
+function statusStyle(status){
+  const found = STATUS_LIST.find(s=>s.key===status);
+  return found || {color:'#8a8270', bg:'#efe9da'};
+}
+
+/* ================= Render sidebar list ================= */
+function renderFilters(){
+  const wrap = document.getElementById('statusFilters');
+  const statuses = ['all', ...new Set(patients.map(p=>p.status).filter(Boolean))];
+  wrap.innerHTML = statuses.map(s=>{
+    const label = s==='all' ? 'الكل' : s;
+    return `<div class="filter-chip ${currentFilter===s?'active':''}" data-status="${s}">${label}</div>`;
+  }).join('');
+  wrap.querySelectorAll('.filter-chip').forEach(chip=>{
+    chip.onclick = ()=>{ currentFilter = chip.dataset.status; renderList(); renderFilters(); };
+  });
+}
+
+function matchesSearch(p, q){
+  if(!q) return true;
+  q = q.trim().toLowerCase();
+  return [p.name, p.number, p.nickname, p.status, p.phone].some(v => (v||'').toLowerCase().includes(q));
+}
+
+function renderList(){
+  const q = document.getElementById('searchInput').value;
+  const listEl = document.getElementById('patientList');
+  let filtered = patients.filter(p => (currentFilter==='all' || p.status===currentFilter) && matchesSearch(p, q));
+  filtered.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
+
+  if(filtered.length === 0){
+    listEl.innerHTML = `<div class="empty-list">لا يوجد مرضى مطابقين للبحث</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(p=>{
+    const initial = (p.name||'؟').trim().charAt(0);
+    const st = statusStyle(p.status);
+    return `
+    <div class="patient-card ${p.id===selectedId?'selected':''}" data-id="${p.id}">
+      <div class="p-avatar">${p.photo ? `<img src="${p.photo}">` : initial}</div>
+      <div class="p-info">
+        <div class="p-name">${escapeHtml(p.name || 'بدون اسم')}</div>
+        <div class="p-meta">
+          <span>#${escapeHtml(p.number||'-')}</span>
+          ${p.status ? `<span style="color:${st.color}">● ${escapeHtml(p.status)}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.patient-card').forEach(card=>{
+    card.onclick = ()=>{ selectedId = card.dataset.id; editingId=null; renderList(); renderMain(); };
+  });
+}
+
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ================= Main panel ================= */
+function renderMain(){
+  const main = document.getElementById('mainPanel');
+
+  if(editingId !== null){
+    renderForm(editingId === 'new' ? null : patients.find(p=>p.id===editingId));
+    return;
+  }
+
+  const p = patients.find(x=>x.id===selectedId);
+  if(!p){
+    main.innerHTML = `
+      <div class="empty-state">
+        <div class="stamp">🩺</div>
+        <h2>مفيش مريض متاختار</h2>
+        <p>اختار مريض من القائمة على اليمين، أو دوس "إضافة مريض جديد" عشان تبدأ ملف جديد.</p>
+      </div>`;
+    return;
+  }
+
+  const st = statusStyle(p.status);
+  const initial = (p.name||'؟').trim().charAt(0);
+
+  main.innerHTML = `
+    <div class="topline">
+      <div><span class="count-label">إجمالي المرضى: ${patients.length}</span></div>
+    </div>
+    <div class="file-card">
+      <div class="file-head">
+        <div class="file-avatar" id="avatarClick">${p.photo ? `<img src="${p.photo}">` : initial}</div>
+        <div class="file-head-info">
+          <h2>${escapeHtml(p.name||'بدون اسم')}</h2>
+          ${p.nickname ? `<div class="nickname">يُعرف بـ: ${escapeHtml(p.nickname)}</div>` : ''}
+          <div class="file-id">#${escapeHtml(p.number||'-')}</div>
+        </div>
+        <div class="file-head-actions">
+          <button class="icon-btn" id="btnEdit" title="تعديل">✎</button>
+          <button class="icon-btn danger" id="btnDelete" title="حذف">🗑</button>
+        </div>
+      </div>
+
+      <div class="status-strip">
+        <div class="status-item">
+          <label>الحالة المرضية</label>
+          <div class="val"><span class="badge" style="background:${st.bg};color:${st.color}">${escapeHtml(p.status||'غير محدد')}</span></div>
+        </div>
+        <div class="status-item">
+          <label>موعد الكشف القادم</label>
+          <div class="val">${p.nextVisit ? formatDate(p.nextVisit) : '—'}</div>
+        </div>
+        <div class="status-item">
+          <label>السن</label>
+          <div class="val">${p.age ? p.age + ' سنة' : '—'}</div>
+        </div>
+      </div>
+
+      <div class="file-body">
+        <div class="grid-2">
+          <div class="field"><label>رقم الهاتف</label><div class="fval ${!p.phone?'empty':''}">${escapeHtml(p.phone)||'غير مسجل'}</div></div>
+          <div class="field"><label>العنوان</label><div class="fval ${!p.address?'empty':''}">${escapeHtml(p.address)||'غير مسجل'}</div></div>
+        </div>
+
+        <div class="section-title">ملاحظات الحالة</div>
+        <div class="notes-box">${p.notes ? escapeHtml(p.notes) : '<span style="color:#b6ac95;font-style:italic">لا توجد ملاحظات</span>'}</div>
+
+        <div class="section-title">
+          صور التحاليل
+          <button class="add-mini" data-gallery="labs">+ إضافة صورة</button>
+        </div>
+        <div class="gallery" id="gallery-labs">${renderGallery(p.labs||[], 'labs')}</div>
+
+        <div class="section-title">
+          صور الروشتة
+          <button class="add-mini" data-gallery="prescriptions">+ إضافة صورة</button>
+        </div>
+        <div class="gallery" id="gallery-prescriptions">${renderGallery(p.prescriptions||[], 'prescriptions')}</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('btnEdit').onclick = ()=>{ editingId = p.id; renderMain(); };
+  document.getElementById('btnDelete').onclick = ()=>{
+    if(confirm(`هل تريد حذف ملف "${p.name}"؟ لا يمكن التراجع عن هذا الإجراء.`)){
+      patients = patients.filter(x=>x.id!==p.id);
+      save(); selectedId=null; renderList(); renderFilters(); renderMain();
+      toast('تم حذف الملف');
+    }
+  };
+  document.getElementById('avatarClick').onclick = ()=>{
+    if(p.photo) openLightbox(p.photo);
+  };
+
+  main.querySelectorAll('[data-gallery]').forEach(btn=>{
+    btn.onclick = ()=> triggerGalleryUpload(p.id, btn.dataset.gallery);
+  });
+  main.querySelectorAll('.gallery-item img').forEach(img=>{
+    img.onclick = ()=> openLightbox(img.src);
+  });
+  main.querySelectorAll('.gallery-item .rm').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      const {gallery, idx} = btn.dataset;
+      p[gallery].splice(idx,1);
+      p.updatedAt = Date.now();
+      save(); renderMain();
+    };
+  });
+}
+
+function renderGallery(arr, key){
+  if(!arr || arr.length===0) return `<div class="gallery-empty">لا توجد صور مضافة</div>`;
+  return arr.map((src,idx)=>`
+    <div class="gallery-item">
+      <img src="${src}">
+      <button class="rm" data-gallery="${key}" data-idx="${idx}">✕</button>
+    </div>`).join('');
+}
+
+function triggerGalleryUpload(patientId, key){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+  input.onchange = async ()=>{
+    const p = patients.find(x=>x.id===patientId);
+    for(const file of input.files){
+      const dataUrl = await fileToDataUrl(file);
+      p[key] = p[key] || [];
+      p[key].push(dataUrl);
+    }
+    p.updatedAt = Date.now();
+    save(); renderMain();
+    toast('تمت إضافة الصورة');
+  };
+  input.click();
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=> resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'});
+}
+
+function openLightbox(src){
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+document.getElementById('lightboxClose').onclick = ()=> document.getElementById('lightbox').classList.remove('open');
+document.getElementById('lightbox').onclick = (e)=>{ if(e.target.id==='lightbox') e.currentTarget.classList.remove('open'); };
+
+/* ================= Form (add/edit) ================= */
+function renderForm(p){
+  const isEdit = !!p;
+  const data = p || {name:'',number: nextPatientNumber(),nickname:'',age:'',phone:'',address:'',status:'',nextVisit:'',notes:'',photo:''};
+
+  const main = document.getElementById('mainPanel');
+  main.innerHTML = `
+    <div class="form-card">
+      <div class="form-title">${isEdit ? 'تعديل ملف المريض' : 'ملف مريض جديد'}</div>
+
+      <div class="photo-upload">
+        <div class="photo-preview" id="photoPreview">${data.photo ? `<img src="${data.photo}">` : '📷'}</div>
+        <div>
+          <button type="button" class="upload-btn" id="btnUploadPhoto">اختيار صورة شخصية</button>
+          <input type="file" id="photoInput" accept="image/*">
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="fg"><label>اسم المريض *</label><input id="f_name" value="${escapeAttr(data.name)}" placeholder="مثال: أحمد محمد علي"></div>
+        <div class="fg"><label>رقم الملف</label><input id="f_number" value="${escapeAttr(data.number)}" placeholder="مثال: 1024"></div>
+
+        <div class="fg"><label>اسم الشهرة</label><input id="f_nickname" value="${escapeAttr(data.nickname)}" placeholder="مثال: أبو محمود"></div>
+        <div class="fg"><label>السن</label><input id="f_age" type="number" min="0" value="${escapeAttr(data.age)}" placeholder="مثال: 45"></div>
+
+        <div class="fg"><label>رقم الهاتف</label><input id="f_phone" value="${escapeAttr(data.phone)}" placeholder="01xxxxxxxxx"></div>
+        <div class="fg">
+          <label>الحالة المرضية</label>
+          <select id="f_status">
+            <option value="">اختر الحالة</option>
+            ${STATUS_LIST.map(s=>`<option value="${s.key}" ${data.status===s.key?'selected':''}>${s.key}</option>`).join('')}
+            <option value="__custom__">حالة أخرى...</option>
+          </select>
+          <input id="f_status_custom" style="margin-top:8px; display:none;" placeholder="اكتب الحالة">
+        </div>
+
+        <div class="fg full"><label>العنوان</label><input id="f_address" value="${escapeAttr(data.address)}" placeholder="العنوان بالتفصيل"></div>
+
+        <div class="fg"><label>موعد الكشف القادم</label><input id="f_nextVisit" type="date" value="${data.nextVisit||''}"></div>
+
+        <div class="fg full"><label>ملاحظات / الحالة بالتفصيل</label><textarea id="f_notes" placeholder="أي تفاصيل عن حالة المريض، الأمراض المزمنة، الحساسية من أدوية، إلخ...">${escapeHtml(data.notes)}</textarea></div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary" id="btnSave">${isEdit ? 'حفظ التعديلات' : 'حفظ الملف'}</button>
+        <button class="btn-secondary" id="btnCancel">إلغاء</button>
+      </div>
+    </div>
+  `;
+
+  let newPhoto = data.photo || '';
+
+  // status custom toggle
+  const statusSel = document.getElementById('f_status');
+  const statusCustom = document.getElementById('f_status_custom');
+  if(data.status && !STATUS_LIST.find(s=>s.key===data.status)){
+    statusSel.value = '__custom__';
+    statusCustom.style.display = 'block';
+    statusCustom.value = data.status;
+  }
+  statusSel.onchange = ()=>{
+    statusCustom.style.display = statusSel.value === '__custom__' ? 'block' : 'none';
+  };
+
+  document.getElementById('btnUploadPhoto').onclick = ()=> document.getElementById('photoInput').click();
+  document.getElementById('photoInput').onchange = async (e)=>{
+    if(e.target.files[0]){
+      newPhoto = await fileToDataUrl(e.target.files[0]);
+      document.getElementById('photoPreview').innerHTML = `<img src="${newPhoto}">`;
+    }
+  };
+
+  document.getElementById('btnCancel').onclick = ()=>{ editingId=null; renderMain(); };
+
+  document.getElementById('btnSave').onclick = ()=>{
+    const name = document.getElementById('f_name').value.trim();
+    if(!name){ toast('من فضلك اكتب اسم المريض'); document.getElementById('f_name').focus(); return; }
+
+    let status = statusSel.value;
+    if(status === '__custom__') status = statusCustom.value.trim();
+
+    const payload = {
+      name,
+      number: document.getElementById('f_number').value.trim(),
+      nickname: document.getElementById('f_nickname').value.trim(),
+      age: document.getElementById('f_age').value.trim(),
+      phone: document.getElementById('f_phone').value.trim(),
+      address: document.getElementById('f_address').value.trim(),
+      status,
+      nextVisit: document.getElementById('f_nextVisit').value,
+      notes: document.getElementById('f_notes').value.trim(),
+      photo: newPhoto,
+      updatedAt: Date.now(),
+    };
+
+    if(isEdit){
+      Object.assign(p, payload);
+      toast('تم حفظ التعديلات');
+      selectedId = p.id;
+    } else {
+      const newP = { id: uid(), labs:[], prescriptions:[], ...payload };
+      patients.push(newP);
+      selectedId = newP.id;
+      toast('تم إضافة المريض بنجاح');
+    }
+    save();
+    editingId = null;
+    renderList(); renderFilters(); renderMain();
+  };
+}
+
+function escapeAttr(v){ return escapeHtml(v==null?'':String(v)); }
+
+function nextPatientNumber(){
+  const nums = patients.map(p=>parseInt(p.number)).filter(n=>!isNaN(n));
+  return nums.length ? String(Math.max(...nums)+1) : '1001';
+}
+
+/* ================= Events ================= */
+document.getElementById('searchInput').addEventListener('input', renderList);
+document.getElementById('btnAddPatient').onclick = ()=>{ editingId = 'new'; selectedId=null; renderMain(); renderList(); };
+
+/* ================= Init ================= */
+renderFilters();
+renderList();
+renderMain();
+</script>
+</body>
+</html>
